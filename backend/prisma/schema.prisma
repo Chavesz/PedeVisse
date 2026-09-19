@@ -1,0 +1,200 @@
+generator client {
+  provider = "prisma-client-js"
+  engineType = "binary"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  RESTAURANT_ADMIN
+  DRIVER
+}
+
+enum OrderStatus {
+  NOVO
+  PREPARANDO
+  SAIU_PARA_ENTREGA
+  ENTREGUE
+}
+
+enum PaymentMethod {
+  PIX
+  CASH
+  CARD
+}
+
+enum FulfillmentMethod {
+  DELIVERY
+  PICKUP
+}
+
+enum CardType {
+  DEBIT
+  CREDIT
+}
+
+enum SubscriptionPlan {
+  START
+  PRO
+  SCALE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+}
+
+enum CommerceType {
+  GENERAL
+  MARKET
+  PHARMACY
+  CONVENIENCE
+  PET_SHOP
+  RESTAURANT
+}
+
+model Restaurant {
+  id             String     @id @default(cuid())
+  name           String
+  slug           String     @unique
+  subscriptionPlan SubscriptionPlan @default(START)
+  subscriptionStatus SubscriptionStatus @default(ACTIVE)
+  subscriptionStartedAt DateTime?
+  stripeCustomerId String?
+  stripeSubscriptionId String?
+  whatsappNumber String?
+  themePrimary   String?
+  themeSecondary String?
+  logoUrl        String?
+  bannerUrls     Json?
+  commerceType   CommerceType @default(GENERAL)
+  heroTitle      String?
+  heroDescription String?
+  isOpen         Boolean    @default(true)
+  closedMessage  String?
+  pixKey         String?
+  addressStreet  String?
+  addressNumber  String?
+  addressNeighborhood String?
+  addressCity    String?
+  addressState   String?
+  addressZip     String?
+  locationLat    Float?
+  locationLng    Float?
+  deliveryFee    Int        @default(0)
+  minOrder       Int        @default(0)
+  deliveryNeighborhoods Json?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  users      User[]
+  categories Category[]
+  products   Product[]
+  orders     Order[]
+}
+
+model User {
+  id           String     @id @default(cuid())
+  restaurantId String?
+  email        String     @unique
+  passwordHash String
+  role         Role
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  restaurant Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+  driverOrders Order[]   @relation("DriverOrders")
+}
+
+model Category {
+  id           String     @id @default(cuid())
+  restaurantId String
+  name         String
+  sortOrder    Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  products   Product[]
+
+  @@index([restaurantId])
+  @@unique([restaurantId, name])
+}
+
+model Product {
+  id           String    @id @default(cuid())
+  restaurantId String
+  categoryId   String
+  name         String
+  description  String?
+  unitLabel    String?
+  requiresPrescription Boolean @default(false)
+  imageUrl     String?
+  price        Int
+  isAvailable  Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  category   Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@index([restaurantId])
+  @@index([categoryId])
+  @@unique([restaurantId, name])
+}
+
+model Order {
+  id                String       @id @default(cuid())
+  restaurantId      String
+  status            OrderStatus  @default(NOVO)
+  fulfillmentMethod FulfillmentMethod @default(DELIVERY)
+  customerName      String
+  customerPhone     String
+  customerNote      String?
+  addressStreet     String?
+  addressNumber     String?
+  addressNeighborhood String?
+  addressReference  String?
+  assignedDriverId  String?
+  paymentMethod     PaymentMethod @default(PIX)
+  paymentChangeCents Int?
+  cardType          CardType?
+  cardBrand         String?
+  paymentProofUrl   String?
+  subtotal          Int          @default(0)
+  deliveryFee       Int          @default(0)
+  total             Int
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  assignedDriver User?   @relation("DriverOrders", fields: [assignedDriverId], references: [id], onDelete: SetNull)
+  items      OrderItem[]
+
+  @@index([restaurantId])
+  @@index([restaurantId, createdAt])
+  @@index([restaurantId, assignedDriverId])
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  productId   String?
+  productName String
+  unitPrice   Int
+  qty         Int
+  note        String?
+  createdAt   DateTime @default(now())
+
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+}

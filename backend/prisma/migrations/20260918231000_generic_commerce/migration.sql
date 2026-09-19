@@ -1,0 +1,10 @@
+CREATE TYPE "CommerceType" AS ENUM ('GENERAL', 'MARKET', 'PHARMACY', 'CONVENIENCE', 'PET_SHOP', 'RESTAURANT');
+
+ALTER TABLE "Restaurant"
+ADD COLUMN "commerceType" "CommerceType" NOT NULL DEFAULT 'GENERAL',
+ADD COLUMN "heroTitle" TEXT,
+ADD COLUMN "heroDescription" TEXT;
+
+ALTER TABLE "Product"
+ADD COLUMN "unitLabel" TEXT,
+ADD COLUMN "requiresPrescription" BOOLEAN NOT NULL DEFAULT false;

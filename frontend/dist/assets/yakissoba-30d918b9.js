@@ -1,0 +1,1 @@
+const s="/assets/combo-12-peças-82f87708.jpg",a="/assets/sushi-natural-d7482e00.jpg",t="/assets/sushi-frito-7148281c.jpg",o="/assets/temaki-natural-04c0a99b.jpg",e="/assets/temaki-frito-42f52d81.jpg",i="/assets/yakissoba-bcbd1ff8.jpg";export{t as a,e as b,s as c,a as s,o as t,i as y};
